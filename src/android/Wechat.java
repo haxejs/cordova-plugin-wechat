@@ -47,7 +47,7 @@ public class Wechat extends CordovaPlugin {
     public static final String TAG = "Cordova.Plugin.Wechat";
 
     public static final String PREFS_NAME = "Cordova.Plugin.Wechat";
-    public static final String WXAPPID_PROPERTY_KEY = "wechatappid";
+    public static final String WXAPPID_PROPERTY_KEY = "WECHATAPPID";
 
     public static final String ERROR_WECHAT_NOT_INSTALLED = "未安装微信";
     public static final String ERROR_INVALID_PARAMETERS = "参数格式错误";
@@ -97,17 +97,16 @@ public class Wechat extends CordovaPlugin {
 
     protected static CallbackContext currentCallbackContext;
     protected static IWXAPI wxAPI;
-    protected static String appId;
+    protected static String appId = "wxcf55918f83bc4744";
 
     @Override
     protected void pluginInitialize() {
 
         super.pluginInitialize();
 
-        String id = getAppId();
-
-        // save app id
-        saveAppId(cordova.getActivity(), id);
+        //String appkey  = preferences.getString(WXAPPID_PROPERTY_KEY, "");
+        //Log.d(TAG, "WECHATAPPID:"+appkey);
+        //if (appkey!=null) appId = appkey;
 
         // init api
         initWXAPI();
@@ -119,7 +118,7 @@ public class Wechat extends CordovaPlugin {
         IWXAPI api = getWxAPI(cordova.getActivity());
 
         if (api != null) {
-            api.registerApp(getAppId());
+            api.registerApp(appId);
         }
     }
 
@@ -130,14 +129,13 @@ public class Wechat extends CordovaPlugin {
      */
     public static IWXAPI getWxAPI(Context ctx) {
         if (wxAPI == null) {
-            String appId = getSavedAppId(ctx);
-
-            if (!appId.isEmpty()) {
-                wxAPI = WXAPIFactory.createWXAPI(ctx, appId, true);
-            }
+            wxAPI = WXAPIFactory.createWXAPI(ctx, appId, true);
         }
-
         return wxAPI;
+    }
+
+    public static String getAppId() {
+        return appId;
     }
 
     @Override
@@ -279,13 +277,7 @@ public class Wechat extends CordovaPlugin {
         PayReq req = new PayReq();
 
         try {
-            final String appid = params.getString("appid");
-            final String savedAppid = getAppId(cordova.getActivity());
-            if (!savedAppid.equals(appid)) {
-                this.saveAppId(cordova.getActivity(), appid);
-            }
-
-            req.appId = appid;
+            req.appId = appId;
             req.partnerId = params.has("mch_id") ? params.getString("mch_id") : params.getString("partnerid");
             req.prepayId = params.has("prepay_id") ? params.getString("prepay_id") : params.getString("prepayid");
             req.nonceStr = params.has("nonce") ? params.getString("nonce") : params.getString("noncestr");
@@ -332,7 +324,7 @@ public class Wechat extends CordovaPlugin {
                ChooseCardFromWXCardPackage.Req req = new ChooseCardFromWXCardPackage.Req();
 
                try {
-                   req.appId = getAppId();
+                   req.appId = appId;
                    req.cardType = "INVOICE";
                    req.signType = params.getString("signType");
                    req.cardSign = params.getString("cardSign");
@@ -624,40 +616,6 @@ public class Wechat extends CordovaPlugin {
         }
 
         return null;
-    }
-
-    public static String getAppId() {
-        if (appId == null) {
-            appId = preferences.getString(WXAPPID_PROPERTY_KEY, "");
-        }
-
-        return appId;
-    }
-
-    /**
-     * Get saved app id
-     * @param ctx
-     * @return
-     */
-    public static String getSavedAppId(Context ctx) {
-        SharedPreferences settings = ctx.getSharedPreferences(PREFS_NAME, 0);
-        return settings.getString(WXAPPID_PROPERTY_KEY, "");
-    }
-
-    /**
-     * Save app id into SharedPreferences
-     * @param ctx
-     * @param id
-     */
-    public static void saveAppId(Context ctx, String id) {
-        if (id.isEmpty()) {
-            return ;
-        }
-
-        SharedPreferences settings = ctx.getSharedPreferences(PREFS_NAME, 0);
-        SharedPreferences.Editor editor = settings.edit();
-        editor.putString(WXAPPID_PROPERTY_KEY, id);
-        editor.commit();
     }
 
     public static CallbackContext getCurrentCallbackContext() {
